@@ -11,7 +11,7 @@ var gulp = require('gulp'),
     sourcemaps = require('gulp-sourcemaps'),
     postcss = require('gulp-postcss'),
     assets  = require('postcss-assets'),
-    print = require('gulp-print'),
+    print = require('gulp-print').default,
     rename = require('gulp-rename');
 
 // plugins for build
@@ -21,12 +21,12 @@ var uglify = require('gulp-uglify'),
     csso = require('gulp-csso');
 
 var assetsDir = 'assets/';
-var productionDir = '../www/assets/';
+var productionDir = '../www/assets/components/omtestimonials/';
 
 //----------------------------------------------------Compiling
 
 gulp.task('sass', function () {
-    gulp.src([assetsDir + 'sass/**/*.scss', '!' + assetsDir + 'sass/**/_*.scss'])
+    return gulp.src([assetsDir + 'sass/**/*.scss', '!' + assetsDir + 'sass/**/_*.scss'])
         .pipe(plumber())
         .pipe(sourcemaps.init())
         .pipe(sass())
@@ -47,9 +47,9 @@ gulp.task('sass', function () {
 
 //-------------------------------------------------Synchronization
 gulp.task('imageSync', function () {
-    return gulp.src('')
+    return gulp.src(assetsDir + 'i/**')
         .pipe(plumber())
-        .pipe(dirSync(assetsDir + 'i/', productionDir + 'i/', {printSummary: true}))
+        .pipe(gulp.dest(productionDir + 'i/'))
         .pipe(print(function(p){
             return "!!!DON'T FORGET RUN imgBuild!!!";
         }));
@@ -72,11 +72,12 @@ gulp.task('jsSync', function () {
 
 
 //watching files and run tasks
-gulp.task('watch', function () {
-    gulp.watch(assetsDir + 'sass/**/*.scss', ['sass']);
-    gulp.watch([assetsDir + 'js/**/*.js','!' + assetsDir + 'js/all/**/*.js'], ['jsSync']);
-    gulp.watch(assetsDir + 'i/**/*', ['imageSync']);
-    gulp.watch(assetsDir + 'fonts/**/*', ['fontsSync']);
+gulp.task('watch', function (done) {
+    gulp.watch(assetsDir + 'sass/**/*.scss', gulp.series('sass'));
+    gulp.watch([assetsDir + 'js/**/*.js','!' + assetsDir + 'js/all/**/*.js'], gulp.series('jsSync'));
+    gulp.watch(assetsDir + 'i/**/*', gulp.series('imageSync'));
+    gulp.watch(assetsDir + 'fonts/**/*', gulp.series('fontsSync'));
+    done();
 });
 
 
@@ -166,4 +167,4 @@ gulp.task('svgSpriteBuild', function () {
         .pipe(gulp.dest(assetsDir + 'i/sprite/'));
 });
 
-gulp.task('default', ['sass', 'imageSync', 'fontsSync', 'jsSync', 'watch']);
+gulp.task('default', gulp.series('sass', 'imageSync', /*'fontsSync',*/ 'jsSync', 'watch'));
